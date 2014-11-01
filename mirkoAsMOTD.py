@@ -3,7 +3,7 @@
 #############################################################################
 # Skrypt: mirkoAsMOTD
 # autor: @noisy
-# wersja: 0.0.7
+# wersja: 0.0.8
 
 MOTD_WYKOP_API_KEY = ''
 MOTD_WYKOP_SECRET_KEY = ''
@@ -55,6 +55,20 @@ item.body = item.body.replace('<br />', '')
 item.body = re.sub('#<a href=\"#(\w+)\">\w+</a>', colored('#', 'blue', attrs=['bold']) + colored('\g<1>', 'white', attrs=['bold']), item.body)
 
 
+# extract and color links
+g = re.findall('<a href="(.*)" rel="nofollow">(.*)</a>', item.body, re.MULTILINE)
+links = ''
+for i, (link, opis) in enumerate(g):
+    item.body = re.sub(
+        '<a href="%s" rel="nofollow">%s</a>' % (link, opis),
+        (colored('%s', 'white', attrs=['bold']) + colored('[%d]', 'yellow', attrs=['bold'])) % (opis, i+1),
+        item.body
+    )
+
+    links += (colored('[%d]', 'yellow', attrs=['bold']) + ' - %s \n') % (i+1, link)
+
+
+# get and set nick color
 author_profile = api.get_profile(item.author)
 
 author_colors = {
@@ -80,12 +94,15 @@ print ("""
 
 %(body_color_scheme)s
 
+%(links)s
 """ % {
     'author_color_scheme': '- @' + colored('%(author)s', author_colors[author_profile.author_group]) + '',
     'votes_color_scheme': colored('[', 'white', attrs=['bold']) + colored('+%(votes)s', 'green', attrs=['bold']) + colored(']', 'white', attrs=['bold']),
-    'body_color_scheme': '%(body)s'
+    'body_color_scheme': '%(body)s',
+    'links': '%(links)s',
 }) % {
     'author': item.author,
     'votes': item.vote_count,
-    'body': item.body
+    'body': item.body,
+    'links': links,
 }
